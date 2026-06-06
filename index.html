@@ -33,10 +33,10 @@
 </div>
 
 <script>
-    // PASTE YOUR GOOGLE SPREADSHEET ID BETWEEN THE QUOTES BELOW:
+    // 🚨 PASTE YOUR GOOGLE SPREADSHEET ID BETWEEN THE QUOTES BELOW:
     const SPREADSHEET_ID = '19uzZVsDbwQeQUPEsR3GdCQY4kaVUGYPt02LpTkBN2ag'; 
     
-    // This turns your Google Sheet into an instant, live JSON API data feed
+    // This turns your Google Sheet into an instant data feed
     const SHEET_URL = `https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
 
     async function checkCode() {
@@ -50,25 +50,26 @@
         loadingFrame.style.display = 'block';
 
         try {
-            // Fetch live data directly from your Google Sheet rows
             const response = await fetch(SHEET_URL);
             const text = await response.text();
             
-            // Clean up Google's special secure data wrapper text string
-            const jsonData = JSON.parse(text.substr(47).slice(0, -2));
+            // Clean up Google's secure text wrapper wrapper
+            const jsonData = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
             const rows = jsonData.table.rows;
             
             let userFound = null;
 
-            // Loop through your spreadsheet rows to match the passcode entered
+            // Loop through your spreadsheet rows safely checking object structures
             for (let row of rows) {
-                let passcode = row.c[0] ? row.c[0].v : '';
-                let name = row.c[1] ? row.c[1].v : '';
-                let balance = row.c[2] ? row.c[2].v : 0;
+                if (row.c && row.c[0] && row.c[1] && row.c[2]) {
+                    let passcode = row.c[0].v;
+                    let name = row.c[1].v;
+                    let balance = row.c[2].v;
 
-                if (String(passcode).trim() === enteredCode) {
-                    userFound = { name: name, balance: parseFloat(balance) };
-                    break;
+                    if (String(passcode).trim() === enteredCode) {
+                        userFound = { name: name, balance: parseFloat(balance) };
+                        break;
+                    }
                 }
             }
 
@@ -84,7 +85,7 @@
 
         } catch (error) {
             loadingFrame.style.display = 'none';
-            alert('Error connecting to the live database. Check your Spreadsheet ID or sharing settings.');
+            alert('Error connecting to the live spreadsheet. Double check your Spreadsheet ID and Share Settings.');
             console.error(error);
         }
     }
