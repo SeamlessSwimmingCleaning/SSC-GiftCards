@@ -5,18 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSC Gift Cards</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .btn-github { background: #24292e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        body { font-family: sans-serif; text-align: center; padding: 30px 20px; background: #f4f7f6; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input { padding: 12px; font-size: 16px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
+        button { padding: 12px 20px; font-size: 16px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #218838; }
+        .card { display: none; margin-top: 30px; padding: 20px; border: 2px dashed #007bff; border-radius: 10px; background: #e8f4fd; text-align: left; }
+        .loading { display: none; color: #666; font-style: italic; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>🎁 SSC Gift Cards</h1>
-    <p>Sign in to view your balance</p>
+
+<div class="container">
+    <h1>💳 SSC Gift Cards</h1>
+    <p>Enter your code to view your balance:</p>
     
-    <!-- Replace YOUR_CLIENT_ID with the ID from GitHub -->
-    <a href="https://github.com" class="btn-github">
-        Sign in with GitHub
-    </a>
+    <input type="text" id="familyCode" placeholder="Enter password here...">
+    <button onclick="checkCode()">View Card</button>
+    <div id="loadingText" class="loading">Fetching live balance...</div>
+
+    <!-- Dynamic Family Member View -->
+    <div id="userCard" class="card">
+        <h2 style="margin-top:0;" id="userCardTitle">SSC Gift Card</h2>
+        <p>Current Balance: <strong style="color:#28a745; font-size: 1.2em;">$<span id="userBalanceDisplay">0.00</span></strong></p>
+        <p>Card Status: <strong>Active ✅</strong></p>
+    </div>
+</div>
+
+<script>
+    // PASTE YOUR GOOGLE SPREADSHEET ID BETWEEN THE QUOTES BELOW:
+    const SPREADSHEET_ID = '19uzZVsDbwQeQUPEsR3GdCQY4kaVUGYPt02LpTkBN2ag'; 
+    
+    // This turns your Google Sheet into an instant, live JSON API data feed
+    const SHEET_URL = `https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
+
+    async function checkCode() {
+        const enteredCode = document.getElementById('familyCode').value.trim();
+        const cardFrame = document.getElementById('userCard');
+        const loadingFrame = document.getElementById('loadingText');
+        
+        if (!enteredCode) return alert("Please enter a code.");
+        
+        cardFrame.style.display = 'none';
+        loadingFrame.style.display = 'block';
+
+        try {
+            // Fetch live data directly from your Google Sheet rows
+            const response = await fetch(SHEET_URL);
+            const text = await response.text();
+            
+            // Clean up Google's special secure data wrapper text string
+            const jsonData = JSON.parse(text.substr(47).slice(0, -2));
+            const rows = jsonData.table.rows;
+            
+            let userFound = null;
+
+            // Loop through your spreadsheet rows to match the passcode entered
+            for (let row of rows) {
+                let passcode = row.c[0] ? row.c[0].v : '';
+                let name = row.c[1] ? row.c[1].v : '';
+                let balance = row.c[2] ? row.c[2].v : 0;
+
+                if (String(passcode).trim() === enteredCode) {
+                    userFound = { name: name, balance: parseFloat(balance) };
+                    break;
+                }
+            }
+
+            loadingFrame.style.display = 'none';
+
+            if (userFound) {
+                document.getElementById('userCardTitle').innerText = `SSC Gift Card — ${userFound.name}`;
+                document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
+                cardFrame.style.display = 'block';
+            } else {
+                alert('Incorrect passcode! Please check your code and try again.');
+            }
+
+        } catch (error) {
+            loadingFrame.style.display = 'none';
+            alert('Error connecting to the live database. Check your Spreadsheet ID or sharing settings.');
+            console.error(error);
+        }
+    }
+</script>
 </body>
-</html>
 </html>
