@@ -5,47 +5,209 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSC Gift Cards</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 30px 20px; background: #f4f7f6; color: #333; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        input { padding: 12px; font-size: 16px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
-        button { padding: 12px 20px; font-size: 16px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        button:hover { background: #218838; }
-        .card { display: none; margin-top: 30px; padding: 20px; border: 2px dashed #007bff; border-radius: 10px; background: #e8f4fd; text-align: left; }
-        .loading { display: none; color: #666; font-style: italic; margin-top: 10px; }
-        .debug-box { margin-top: 40px; font-size: 11px; color: #555; text-align: left; background: #eee; padding: 10px; border-radius: 5px; word-break: break-all; max-height: 200px; overflow-y: auto; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            padding: 40px 20px; 
+            background: #eef2f3; 
+            color: #333; 
+        }
+        .container { 
+            max-width: 450px; 
+            margin: auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+        }
+        h1 { 
+            color: #1a1a1a; 
+            font-size: 28px; 
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+        input { 
+            padding: 14px; 
+            font-size: 16px; 
+            margin: 10px 0; 
+            border-radius: 10px; 
+            border: 2px solid #e0e0e0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        button { 
+            padding: 14px 20px; 
+            font-size: 16px; 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-weight: bold; 
+            margin-top: 10px; 
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+            transition: all 0.2s;
+        }
+        button:hover { 
+            background: #218838; 
+            transform: translateY(-1px);
+        }
+        .loading { 
+            display: none; 
+            color: #666; 
+            font-style: italic; 
+            margin-top: 15px; 
+            font-size: 14px;
+        }
+
+        /* 💳 REALISTIC METALLIC GIFT CARD LOOK */
+        .card { 
+            display: none; 
+            margin-top: 35px; 
+            padding: 25px; 
+            border-radius: 16px; 
+            /* Premium dark platinum gradient style */
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+            color: white;
+            text-align: left; 
+            position: relative;
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.35);
+            overflow: hidden;
+            aspect-ratio: 1.586 / 1; /* Match actual physical credit card dimensions */
+        }
+        /* Glossy card overlay shine effect */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .card-logo {
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-chip {
+            width: 35px;
+            height: 26px;
+            background: linear-gradient(135deg, #fef08a, #ca8a04);
+            border-radius: 4px;
+            opacity: 0.8;
+        }
+        .card-holder {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card-balance-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            margin-bottom: 2px;
+        }
+        .card-balance { 
+            font-size: 32px; 
+            font-weight: 700; 
+            color: #4ade80;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* 📊 DIGITAL BARCODE CONTAINER STYLE */
+        .barcode-container {
+            margin-top: 25px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .barcode-img {
+            width: 100%;
+            height: 45px;
+            /* Generates a clean digital scanner barcode block look */
+            background: repeating-linear-gradient(
+                90deg,
+                #000,
+                #000 2px,
+                #fff 2px,
+                #fff 4px,
+                #000 4px,
+                #000 5px,
+                #fff 5px,
+                #fff 8px
+            );
+            opacity: 0.85;
+        }
+        .barcode-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: #333;
+            margin-top: 6px;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>💳 SSC Gift Cards</h1>
-    <p>Enter your code to view your balance:</p>
+    <p class="subtitle">Enter your family passkey code to retrieve your digital card balance</p>
     
-    <input type="text" id="familyCode" placeholder="Enter password here...">
-    <button onclick="checkCode()">View Card</button>
-    <div id="loadingText" class="loading">Connecting to live spreadsheet...</div>
+    <input type="text" id="familyCode" placeholder="Type secret passkey code here...">
+    <button onclick="checkCode()">Access Live Wallet</button>
+    <div id="loadingText" class="loading">Syncing secure data connection...</div>
 
-    <!-- Dynamic Family Member View -->
+    <!-- 💳 Beautiful Dynamic Gift Card Interface -->
     <div id="userCard" class="card">
-        <h2 style="margin-top:0;" id="userCardTitle">SSC Gift Card</h2>
-        <p>Current Balance: <strong style="color:#28a745; font-size: 1.2em;">$<span id="userBalanceDisplay">0.00</span></strong></p>
-        <p>Card Status: <strong>Active ✅</strong></p>
-    </div>
-
-    <!-- System Diagnostic Box -->
-    <div class="debug-box">
-        <strong>System Data Inspector:</strong>
-        <div id="debugLog">Waiting for passcode...</div>
+        <div class="card-header">
+            <span class="card-logo">SSC PREMIUM</span>
+            <div class="card-chip"></div>
+        </div>
+        
+        <div class="card-holder" id="userCardTitle">GIFT CARD HOLDER</div>
+        
+        <div class="card-balance-label">Available Balance</div>
+        <div class="card-balance">$<span id="userBalanceDisplay">0.00</span></div>
+        
+        <!-- Interactive Barcode Generator Graphic -->
+        <div class="barcode-container">
+            <div class="barcode-img"></div>
+            <div class="barcode-number" id="barcodeDisplay">0000-0000-0000</div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 🚨 PASTE YOUR ENTIRE "PUBLISH TO WEB" CSV LINK BETWEEN THE QUOTES BELOW:
+    // 🚨 LEAVE YOUR WORKING CSV LINK EXACTLY AS IT IS BETWEEN THESE QUOTES:
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSuI6kvYTgt_1Yovf9J6eQcZoNM4RMR8h4TcuiIe1pMF0N8J1fH29BMz0hGaX1ae-TZ-y3faCDnzlwj/pub?output=csv';
-
-    function logDebug(htmlMessage) {
-        document.getElementById('debugLog').innerHTML = htmlMessage;
-    }
 
     async function checkCode() {
         const enteredCode = document.getElementById('familyCode').value.trim();
@@ -56,60 +218,53 @@
         
         cardFrame.style.display = 'none';
         loadingFrame.style.display = 'block';
-        logDebug("Connecting to Google Servers...");
 
         try {
             const response = await fetch(CSV_URL);
             if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
             
             const rawText = await response.text();
-            
-            // Clean up both standard newlines (\n) AND carriage returns (\r) to kill hidden formatting spacing
             const rows = rawText.split(/\r?\n/);
             let userFound = null;
-            let logViewer = "<strong>Spreadsheet rows found:</strong><br>";
 
-            // Loop rows, skipping headers line 0
             for (let i = 1; i < rows.length; i++) {
                 let currentRow = rows[i].trim();
                 if (!currentRow) continue;
                 
-                // Parse rows strictly bypassing inline quotation mark groupings
                 let columns = currentRow.split(',');
                 
                 if (columns.length >= 3) {
-                    // Extract values and aggressively strip quotes and invisible white spaces
                     let passcode = columns[0].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
                     let name = columns[1].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
                     let balance = columns[2].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
 
-                    logViewer += `Row ${i} -> Read Passcode: "${passcode}" | Name: "${name}" | Balance: "${balance}"<br>`;
-
                     if (passcode === enteredCode) {
-                        userFound = { name: name, balance: parseFloat(balance) };
+                        userFound = { name: name, balance: parseFloat(balance), pass: passcode };
                         break;
                     }
-                } else {
-                    logViewer += `<span style="color:red;">Row ${i} has improper structure (needs at least 3 columns). Row text: "${currentRow}"</span><br>`;
                 }
             }
 
             loadingFrame.style.display = 'none';
 
             if (userFound) {
-                logDebug(`<strong>Success!</strong> Welcome ${userFound.name}.<br><br>` + logViewer);
-                document.getElementById('userCardTitle').innerText = `SSC Gift Card — ${userFound.name}`;
+                // Populate Card Elements
+                document.getElementById('userCardTitle').innerText = userFound.name;
                 document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
+                
+                // Show their actual passcode at the bottom of the barcode card line
+                document.getElementById('barcodeDisplay').innerText = userFound.pass.toUpperCase();
+                
+                // Animate and reveal the polished card graphic
                 cardFrame.style.display = 'block';
             } else {
-                logDebug(`<strong>Error:</strong> Password "${enteredCode}" did not match any items list below.<br><br>` + logViewer);
-                alert('Passcode not recognized. Look at the list below to check spelling!');
+                alert('Passcode not recognized. Double check formatting and spelling!');
             }
 
         } catch (error) {
             loadingFrame.style.display = 'none';
-            logDebug(`<strong>CRITICAL FAULT:</strong> ${error.message}<br>Verify your share link setting matches Step 1 exactly.`);
-            alert('Could not sync data feed. Look at the data inspector box below.');
+            alert('Could not sync card details. Make sure your device is connected to the internet.');
+            console.error(error);
         }
     }
 </script>
