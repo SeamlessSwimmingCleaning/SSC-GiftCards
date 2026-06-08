@@ -269,31 +269,51 @@
     }
 
     /**
-     * Safely parses CSV data, handling quoted fields and basic sanitization.
+     * Robust CSV parser that handles both quoted and unquoted fields.
      * @param {string} csvString - The raw CSV content as a string.
      * @returns {Array<Array<string>>} An array of arrays representing the CSV rows and columns.
      */
     function parseCsv(csvString) {
-        const rows = csvString.split(/\r?\n/);
+        const rows = csvString.split(/\r?\n/).filter(row => row.trim());
         const data = [];
-        const regex = /(?:^|,)(?:"([^"]*"|[^,]*)?)/g; // Regex to handle quoted fields
 
         for (const row of rows) {
-            if (!row.trim()) continue; // Skip empty rows
             const columns = [];
-            let match;
-            let lastIndex = 0;
-            while ((match = regex.exec(row)) !== null) {
-                let value = match[1] || '';
-                if (value.startsWith('"') && value.endsWith('"')) {
-                    value = value.substring(1, value.length - 1).replace(/""/g, '"'); // Handle escaped quotes
+            let current = '';
+            let insideQuotes = false;
+            
+            for (let i = 0; i < row.length; i++) {
+                const char = row[i];
+                const nextChar = row[i + 1];
+                
+                if (char === '"') {
+                    if (insideQuotes && nextChar === '"') {
+                        // Escaped quote
+                        current += '"';
+                        i++; // Skip next quote
+                    } else {
+                        // Toggle quote state
+                        insideQuotes = !insideQuotes;
+                    }
+                } else if (char === ',' && !insideQuotes) {
+                    // End of field
+                    columns.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
                 }
-                // Basic sanitization: remove control characters and trim whitespace
-                columns.push(value.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim());
-                lastIndex = regex.lastIndex;
             }
-            data.push(columns);
+            
+            // Add last field
+            if (current || columns.length > 0) {
+                columns.push(current.trim());
+            }
+            
+            if (columns.length > 0) {
+                data.push(columns);
+            }
         }
+        
         return data;
     }
 
@@ -312,17 +332,25 @@
             const rawText = await response.text();
             const csvData = parseCsv(rawText);
 
+            // Log for debugging purposes
+            console.log("CSV Data:", csvData);
+            console.log("Looking for passcode:", enteredCode);
+
             for (const row of csvData) {
                 if (row.length >= 3) {
-                    const passcode = row[0];
-                    const name = row[1];
+                    const passcode = row[0].trim();
+                    const name = row[1].trim();
                     const balance = parseFloat(row[2]);
 
+                    console.log(`Comparing "${passcode}" with "${enteredCode}"`);
+
                     if (passcode === enteredCode) {
+                        console.log("Match found!");
                         return { name: name, balance: balance, pass: passcode };
                     }
                 }
             }
+            console.log("No match found");
             return null; // User not found
         } catch (error) {
             console.error("Error fetching or parsing CSV data:", error);
@@ -337,7 +365,6 @@
         const enteredCode = familyCodeInput.value.trim();
         
         if (!enteredCode) {
-            // Consider using a more user-friendly notification system than alert
             alert("Please enter your passcode.");
             return;
         }
@@ -378,6 +405,7 @@
             loadingText.style.display = 'none';
             // Provide a more specific error message to the user
             alert('Could not sync card details. Please ensure you are connected to the internet and try again.');
+            console.error("Wallet access error:", error);
         }
     }
 
