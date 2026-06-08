@@ -281,9 +281,16 @@ colorPicker.addEventListener('input', (event) => {
             const rows = rawText.split(/\r?\n/);
             let userFound = null;
 
-            for (let i = 1; i < rows.length; i++) {
-                let currentRow = rows[i].trim();
-                if (!currentRow) continue;
+            if (columns.length >= 3) {
+    let passcode = columns[0].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+    let name = columns[1].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+    let balance = columns[2].replace(/^"|"$/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+
+    if (passcode === enteredCode) {
+        userFound = { name: name, balance: parseFloat(balance), pass: passcode };
+        break;
+    }
+}
                 
                 let columns = currentRow.split(',');
                 
