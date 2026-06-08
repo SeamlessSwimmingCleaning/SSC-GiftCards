@@ -32,7 +32,7 @@
         <p>Card Status: <strong>Active ✅</strong></p>
     </div>
 
-    <!-- Live Debugger Box (Delete this section later once your app works!) -->
+    <!-- Live Debugger Box -->
     <div class="debug-box">
         <strong>System Status Log:</strong>
         <div id="debugLog">System ready. Waiting for input...</div>
@@ -59,17 +59,15 @@
         logDebug("Attempting to fetch spreadsheet data...");
 
         try {
-            // Read lines cleanly from the public published web CSV endpoint
             const response = await fetch(CSV_URL);
             
             if (!response.ok) {
-                throw new Error(`Google rejected request. Server response status: ${response.status}`);
+                throw new Error(`Google rejected request. Status: ${response.status}`);
             }
             
             const rawText = await response.text();
-            logDebug("Data grabbed successfully! Processing spreadsheet layout rows...");
+            logDebug("Data grabbed! Processing rows...");
             
-            // Split layout row by row
             const rows = rawText.split('\n');
             let userFound = null;
 
@@ -78,11 +76,11 @@
                 let currentRow = rows[i].trim();
                 if (!currentRow) continue;
                 
-                // Break row values up parsing past inline comma markers
+                // Break row values up parsing by commas
                 let columns = currentRow.split(',');
                 
                 if (columns.length >= 3) {
-                    // Strip matching quote artifacts left behind by Excel/Google
+                    // FIXED: Explicitly target array item indexes [0], [1], and [2]
                     let passcode = columns[0].replace(/^"|"$/g, '').trim();
                     let name = columns[1].replace(/^"|"$/g, '').trim();
                     let balance = columns[2].replace(/^"|"$/g, '').trim();
@@ -97,22 +95,21 @@
             loadingFrame.style.display = 'none';
 
             if (userFound) {
-                logDebug(`Success! Logged in as user profile: ${userFound.name}`);
+                logDebug(`Success! Logged in as: ${userFound.name}`);
                 document.getElementById('userCardTitle').innerText = `SSC Gift Card — ${userFound.name}`;
                 document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
                 cardFrame.style.display = 'block';
             } else {
-                logDebug(`Search complete. Typo alert: Code "${enteredCode}" does not match any row.`);
+                logDebug(`Search complete. Code "${enteredCode}" does not match any spreadsheet row.`);
                 alert('Passcode not recognized. Double check spelling!');
             }
 
         } catch (error) {
             loadingFrame.style.display = 'none';
             logDebug(`CRITICAL FAULT: ${error.message}`);
-            alert('Could not sync data feed. Check the system log message at the bottom of the screen.');
+            alert('Could not sync data feed. Check the system log message at the bottom.');
         }
     }
 </script>
 </body>
 </html>
-
