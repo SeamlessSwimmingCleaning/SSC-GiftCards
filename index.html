@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Meta tags to hide the mobile browser top address bar -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+    
     <title>SSC Gift Cards</title>
     <style>
         body { 
@@ -45,6 +51,35 @@
             outline: none;
             border-color: #007bff;
         }
+
+/* 🎨 COLOR CUSTOMIZATION PANEL */
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    margin: 10px 0;
+}
+.color-picker-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+input[type="color"] {
+    padding: 0;
+    width: 45px;
+    height: 35px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: none;
+    margin: 0;
+}
+
+        
         button { 
             padding: 14px 20px; 
             font-size: 16px; 
@@ -182,6 +217,11 @@
     <p class="subtitle">Enter your family passkey code to retrieve your digital card balance</p>
     
     <input type="text" id="familyCode" placeholder="Type secret passkey code here...">
+    <!-- Color Customizer Wheel Module -->
+<div class="color-picker-container">
+    <span class="color-picker-label">🎨 Customize Card Color:</span>
+    <input type="color" id="cardColorWheel" value="#1e293b">
+</div>
     <button onclick="checkCode()">Access Live Wallet</button>
     <div id="loadingText" class="loading">Syncing secure data connection...</div>
 
@@ -209,6 +249,17 @@
     // 🚨 LEAVE YOUR WORKING CSV LINK EXACTLY AS IT IS BETWEEN THESE QUOTES:
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSuI6kvYTgt_1Yovf9J6eQcZoNM4RMR8h4TcuiIe1pMF0N8J1fH29BMz0hGaX1ae-TZ-y3faCDnzlwj/pub?output=csv';
 
+// Track the current user-selected hex color wheel selection
+const colorPicker = document.getElementById('cardColorWheel');
+const userCard = document.getElementById('userCard');
+
+colorPicker.addEventListener('input', (event) => {
+    const pickedColor = event.target.value;
+    // Changes base gradient parameters based on selection dynamically
+    userCard.style.background = `linear-gradient(135deg, ${pickedColor} 0%, #050505 100%)`;
+});
+
+    
     async function checkCode() {
         const enteredCode = document.getElementById('familyCode').value.trim();
         const cardFrame = document.getElementById('userCard');
