@@ -12,6 +12,7 @@
         button:hover { background: #218838; }
         .card { display: none; margin-top: 30px; padding: 20px; border: 2px dashed #007bff; border-radius: 10px; background: #e8f4fd; text-align: left; }
         .loading { display: none; color: #666; font-style: italic; margin-top: 10px; }
+        .debug-box { margin-top: 40px; font-size: 11px; color: #999; text-align: left; background: #eee; padding: 10px; border-radius: 5px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -22,7 +23,7 @@
     
     <input type="text" id="familyCode" placeholder="Enter password here...">
     <button onclick="checkCode()">View Card</button>
-    <div id="loadingText" class="loading">Fetching live balance...</div>
+    <div id="loadingText" class="loading">Connecting to live spreadsheet...</div>
 
     <!-- Dynamic Family Member View -->
     <div id="userCard" class="card">
@@ -30,43 +31,63 @@
         <p>Current Balance: <strong style="color:#28a745; font-size: 1.2em;">$<span id="userBalanceDisplay">0.00</span></strong></p>
         <p>Card Status: <strong>Active ✅</strong></p>
     </div>
+
+    <!-- Live Debugger Box (Delete this section later once your app works!) -->
+    <div class="debug-box">
+        <strong>System Status Log:</strong>
+        <div id="debugLog">System ready. Waiting for input...</div>
+    </div>
 </div>
 
 <script>
-    // 🚨 PASTE YOUR GOOGLE SPREADSHEET ID BETWEEN THE QUOTES BELOW:
-    const SPREADSHEET_ID = '1lpDkYGQaKkT8Bu9_Or1Egp0UY8I2iUk75zzPjYRVs0o'; 
-    
-    // This turns your Google Sheet into an instant data feed
-    const SHEET_URL = `https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
+    // 🚨 PASTE YOUR ENTIRE "PUBLISH TO WEB" CSV LINK BETWEEN THE QUOTES BELOW:
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSuI6kvYTgt_1Yovf9J6eQcZoNM4RMR8h4TcuiIe1pMF0N8J1fH29BMz0hGaX1ae-TZ-y3faCDnzlwj/pubhtml';
+
+    function logDebug(message) {
+        document.getElementById('debugLog').innerText = message;
+    }
 
     async function checkCode() {
         const enteredCode = document.getElementById('familyCode').value.trim();
         const cardFrame = document.getElementById('userCard');
         const loadingFrame = document.getElementById('loadingText');
         
-        if (!enteredCode) return alert("Please enter a code.");
+        if (!enteredCode) return alert("Please enter your passcode.");
         
         cardFrame.style.display = 'none';
         loadingFrame.style.display = 'block';
+        logDebug("Attempting to fetch spreadsheet data...");
 
         try {
-            const response = await fetch(SHEET_URL);
-            const text = await response.text();
+            // Read lines cleanly from the public published web CSV endpoint
+            const response = await fetch(CSV_URL);
             
-            // Clean up Google's secure text wrapper wrapper
-            const jsonData = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
-            const rows = jsonData.table.rows;
+            if (!response.ok) {
+                throw new Error(`Google rejected request. Server response status: ${response.status}`);
+            }
             
+            const rawText = await response.text();
+            logDebug("Data grabbed successfully! Processing spreadsheet layout rows...");
+            
+            // Split layout row by row
+            const rows = rawText.split('\n');
             let userFound = null;
 
-            // Loop through your spreadsheet rows safely checking object structures
-            for (let row of rows) {
-                if (row.c && row.c[0] && row.c[1] && row.c[2]) {
-                    let passcode = row.c[0].v;
-                    let name = row.c[1].v;
-                    let balance = row.c[2].v;
+            // Loop rows, skipping the header line at index 0
+            for (let i = 1; i < rows.length; i++) {
+                let currentRow = rows[i].trim();
+                if (!currentRow) continue;
+                
+                // Break row values up parsing past inline comma markers
+                let columns = currentRow.split(',');
+                
+                if (columns.length >= 3) {
+                    // Strip matching quote artifacts left behind by Excel/Google
+                    let passcode = columns[0].replace(/^"|"$/g, '').trim();
+                    let name = columns[1].replace(/^"|"$/g, '').trim();
+                    let balance = columns[2].replace(/^"|"$/g, '').trim();
 
-                    if (String(passcode).trim() === enteredCode) {
+                    if (passcode === enteredCode) {
                         userFound = { name: name, balance: parseFloat(balance) };
                         break;
                     }
@@ -76,19 +97,22 @@
             loadingFrame.style.display = 'none';
 
             if (userFound) {
+                logDebug(`Success! Logged in as user profile: ${userFound.name}`);
                 document.getElementById('userCardTitle').innerText = `SSC Gift Card — ${userFound.name}`;
                 document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
                 cardFrame.style.display = 'block';
             } else {
-                alert('Incorrect passcode! Please check your code and try again.');
+                logDebug(`Search complete. Typo alert: Code "${enteredCode}" does not match any row.`);
+                alert('Passcode not recognized. Double check spelling!');
             }
 
         } catch (error) {
             loadingFrame.style.display = 'none';
-            alert('Error connecting to the live spreadsheet. Double check your Spreadsheet ID and Share Settings.');
-            console.error(error);
+            logDebug(`CRITICAL FAULT: ${error.message}`);
+            alert('Could not sync data feed. Check the system log message at the bottom of the screen.');
         }
     }
 </script>
 </body>
 </html>
+
