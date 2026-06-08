@@ -10,6 +10,10 @@
 <meta name="mobile-web-app-capable" content="yes">
     
     <title>SSC Gift Cards</title>
+    
+    <!-- 📊 Include JsBarcode Library via CDN for real scannable barcodes -->
+<script src="https://cloudflare.com"></script>
+
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -171,35 +175,22 @@ input[type="color"] {
             color: #4ade80;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        
-        /* 📊 DIGITAL BARCODE CONTAINER STYLE */
-        .barcode-container {
-            margin-top: 25px;
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .barcode-img {
-            width: 100%;
-            height: 45px;
-            /* Generates a clean digital scanner barcode block look */
-            background: repeating-linear-gradient(
-                90deg,
-                #000,
-                #000 2px,
-                #fff 2px,
-                #fff 4px,
-                #000 4px,
-                #000 5px,
-                #fff 5px,
-                #fff 8px
-            );
-            opacity: 0.85;
-        }
+       /* 📊 SCANNABLE BARCODE CONTAINER */
+.barcode-container {
+    margin-top: 25px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.barcode-container svg {
+    width: 100%;
+    height: auto;
+    max-height: 60px;
+}
+
         .barcode-number {
             font-family: 'Courier New', Courier, monospace;
             font-size: 13px;
@@ -236,30 +227,42 @@ input[type="color"] {
         
         <div class="card-balance-label">Available Balance</div>
         <div class="card-balance">$<span id="userBalanceDisplay">0.00</span></div>
-        
-        <!-- Interactive Barcode Generator Graphic -->
-        <div class="barcode-container">
-            <div class="barcode-img"></div>
-            <div class="barcode-number" id="barcodeDisplay">0000-0000-0000</div>
+    
+        <!-- Scannable SVG Barcode Graphic Target -->
+<div class="barcode-container">
+    <svg id="barcodeTarget"></svg>
+</div>
+
         </div>
     </div>
 </div>
 
 <script>
     // 🚨 LEAVE YOUR WORKING CSV LINK EXACTLY AS IT IS BETWEEN THESE QUOTES:
+    
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSuI6kvYTgt_1Yovf9J6eQcZoNM4RMR8h4TcuiIe1pMF0N8J1fH29BMz0hGaX1ae-TZ-y3faCDnzlwj/pub?output=csv';
-
-// Track the current user-selected hex color wheel selection
 const colorPicker = document.getElementById('cardColorWheel');
 const userCard = document.getElementById('userCard');
 
+// Helper function to update the background gradient style matrix
+function applyCardColor(hexColor) {
+    userCard.style.background = `linear-gradient(135deg, ${hexColor} 0%, #050505 100%)`;
+}
+
+// 💾 Check Local Memory for a previously stored color choice on page setup load
+const savedColor = localStorage.getItem('sscUserCardColor');
+if (savedColor) {
+    colorPicker.value = savedColor;
+    applyCardColor(savedColor);
+}
+
+// Save picked selection state directly into persistent storage slots
 colorPicker.addEventListener('input', (event) => {
     const pickedColor = event.target.value;
-    // Changes base gradient parameters based on selection dynamically
-    userCard.style.background = `linear-gradient(135deg, ${pickedColor} 0%, #050505 100%)`;
+    applyCardColor(pickedColor);
+    localStorage.setItem('sscUserCardColor', pickedColor);
 });
 
-    
     async function checkCode() {
         const enteredCode = document.getElementById('familyCode').value.trim();
         const cardFrame = document.getElementById('userCard');
@@ -298,19 +301,25 @@ colorPicker.addEventListener('input', (event) => {
 
             loadingFrame.style.display = 'none';
 
-            if (userFound) {
-                // Populate Card Elements
-                document.getElementById('userCardTitle').innerText = userFound.name;
-                document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
-                
-                // Show their actual passcode at the bottom of the barcode card line
-                document.getElementById('barcodeDisplay').innerText = userFound.pass.toUpperCase();
-                
-                // Animate and reveal the polished card graphic
-                cardFrame.style.display = 'block';
-            } else {
-                alert('Passcode not recognized. Double check formatting and spelling!');
-            }
+           if (userFound) {
+    document.getElementById('userCardTitle').innerText = userFound.name;
+    document.getElementById('userBalanceDisplay').innerText = userFound.balance.toFixed(2);
+    
+    // 📊 Generate standard Code 128 production-grade scanner vector
+    JsBarcode("#barcodeTarget", userFound.pass.toUpperCase(), {
+        format: "CODE128",
+        lineColor: "#000000",
+        width: 2,
+        height: 40,
+        displayValue: true,
+        fontSize: 13,
+        fontOptions: "bold",
+        font: "Courier New"
+    });
+    
+    cardFrame.style.display = 'block';
+}
+
 
         } catch (error) {
             loadingFrame.style.display = 'none';
