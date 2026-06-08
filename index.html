@@ -161,6 +161,17 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        .membership-status {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            display: inline-block;
+        }
         .card-balance-label {
             font-size: 11px;
             color: #94a3b8;
@@ -224,6 +235,7 @@
         </div>
         
         <div class="card-holder" id="userCardTitle">GIFT CARD HOLDER</div>
+        <div class="membership-status" id="membershipStatus">MEMBERSHIP STATUS</div>
         
         <div class="card-balance-label">Available Balance</div>
         <div class="card-balance">$<span id="userBalanceDisplay">0.00</span></div>
@@ -247,6 +259,7 @@
     const loadingText = document.getElementById('loadingText');
     const userCardTitle = document.getElementById('userCardTitle');
     const userBalanceDisplay = document.getElementById('userBalanceDisplay');
+    const membershipStatus = document.getElementById('membershipStatus');
     const barcodeTarget = document.getElementById('barcodeTarget');
 
     /**
@@ -341,12 +354,13 @@
                     const passcode = row[0].trim();
                     const name = row[1].trim();
                     const balance = parseFloat(row[2]);
+                    const membership = row.length >= 4 ? row[3].trim() : "Standard";
 
                     console.log(`Comparing "${passcode}" with "${enteredCode}"`);
 
                     if (passcode === enteredCode) {
                         console.log("Match found!");
-                        return { name: name, balance: balance, pass: passcode };
+                        return { name: name, balance: balance, pass: passcode, membership: membership };
                     }
                 }
             }
@@ -382,6 +396,7 @@
                 // Update card details
                 userCardTitle.innerText = userData.name;
                 userBalanceDisplay.innerText = userData.balance.toFixed(2);
+                membershipStatus.innerText = userData.membership.toUpperCase();
                 
                 // Generate barcode
                 JsBarcode(barcodeTarget, userData.pass.toUpperCase(), {
